@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: urbanflow
+      POSTGRES_USER: urbanflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-urbanflow-local}
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - geo_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U urbanflow']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+volumes:
+  geo_data:
