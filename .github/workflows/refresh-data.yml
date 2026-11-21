@@ -40,12 +40,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - if: env.SOURCE == 'neighborhoods'
+        run: node scripts/encode-map-preview.mjs
       - run: npm test
       - run: npm run build
       - name: Publicar snapshot validado
         run: |
-          if git diff --quiet -- data/"$SOURCE".json public/bh-bairros.svg; then exit 0; fi
-          git add -- data/"$SOURCE".json data/sources.json public/bh-bairros.svg
+          if git diff --quiet -- data/"$SOURCE".json public/bh-bairros.svg public/bh-bairros.webp; then exit 0; fi
+          git add -- data/"$SOURCE".json data/sources.json public/bh-bairros.svg public/bh-bairros.webp
           if git diff --cached --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

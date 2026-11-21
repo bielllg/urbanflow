@@ -41,7 +41,7 @@ export default function Overview({ data, onNavigate }: Props) {
               if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
               event.preventDefault();onNavigate('/mapa');
             }} className="uv-map-preview">
-              <Image src="/bh-bairros.svg" alt="" fill preload unoptimized/>
+              <Image src="/bh-bairros.webp" alt="" fill loading="eager" fetchPriority="high" unoptimized/>
               <span>Explorar mapa <span className="sr-only">interativo de Belo Horizonte</span><ArrowUpRight size={14} aria-hidden="true"/></span>
             </Link></div>
           </Panel>

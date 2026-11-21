@@ -2,7 +2,6 @@
 
 import { type ReactNode } from 'react';
 import type { Count, Period } from '@/lib/types';
-import './views.css';
 
 export const number = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 const date = new Intl.DateTimeFormat('pt-BR', { timeZone: 'UTC' });
