@@ -53,6 +53,13 @@ A consulta de fluxo rodoviário por ponto exige uma chave TomTom autorizada e co
 
 Os alertas de análise e os relatórios salvos ficam neste dispositivo. O histórico registra quando um recorte consultado satisfaz um limite. Entrega externa exige um canal de notificação. O CSV inclui o recorte completo e o PDF inclui resumo e amostra de até 100 registros.
 
+## Operação em tempo real
+
+- **Trânsito.** Defina `TOMTOM_API_KEY` no ambiente do servidor quando a conta autorizar a exibição de fluxo e incidentes. O fluxo é consultado por ponto. O painel de incidentes consulta o retângulo de Belo Horizonte e entorno e identifica o horário da consulta.
+- **Transporte público.** Configure os endpoints HTTPS autorizados em `SUMOB_GTFS_RT_ALERTS_URL` e `SUMOB_GTFS_RT_UPDATES_URL`. A página valida carimbo de tempo e formato, exibe alertas vigentes e contabiliza atraso positivo apenas nas viagens cujo feed informa atraso. A posição GPS municipal é uma camada independente.
+- **Alertas agendados.** Configure `URBANFLOW_ALERT_DATABASE_URL` para um PostgreSQL e execute `node --env-file=.env.local scripts/migrate-alerts.mjs` se a conexão estiver no arquivo local. No ambiente de produção, configure o mesmo banco, `CRON_SECRET`, `URBANFLOW_ALERT_WEBHOOK` (HTTPS), `URBANFLOW_ALERT_WEBHOOK_SECRET` (32 caracteres ou mais) e `URBANFLOW_ALERT_RULES`. As regras administrativas são um array JSON com objetos como `{"id":"limite-bh","name":"Limite de sinistros em BH","minimum":1200}`, opcionalmente com `region` usando o nome da regional. A rotina diária avalia o último recorte publicado de 30 dias. Os alertas pessoais da interface continuam no navegador.
+- **Entrega.** O receptor do webhook deve verificar `x-urbanflow-signature` (HMAC-SHA256 do timestamp, um ponto e o corpo bruto), rejeitar timestamps antigos e deduplicar por `idempotency-key`. O servidor registra cada disparo no banco e tenta novamente entregas sem confirmação em até cinco execuções.
+
 ## Verificar
 
 ```powershell

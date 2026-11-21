@@ -5,6 +5,7 @@ import { useEffect, useEffectEvent, useMemo, useState, type ReactNode } from 're
 import type { Accident, Count, DashboardData, Period, Traffic, TransitRoute } from '@/lib/types';
 import { Breakdown, Kpi, Panel, displayDate, displayPeriod, number } from './ViewParts';
 import { Chart } from './Chart';
+import LiveFeeds from './LiveFeeds';
 
 type Page = 'transito' | 'acidentes' | 'transporte-publico' | 'analise-historica';
 type Navigate = (url: string) => void;
@@ -357,8 +358,10 @@ export default function Analytics({ data, page, map, onNavigate, onSelectRoute, 
         ? 'O calendário publicado venceu. As viagens exibidas são do período de referência.'
         : 'O calendário publicado vence em até sete dias.'} Vigência até {displayDate(data.transitValidity.end)}.</p>}
     {isTraffic && <TrafficView data={data} map={map} area={region}/>}
+    {isTraffic && <LiveFeeds source="road"/>}
     {page === 'acidentes' && <Accidents data={data} map={map} onNavigate={onNavigate} area={region}/>}
     {transit && <Transit data={data} map={map} selectedRoute={selectedRoute} onSelectRoute={onSelectRoute}/>}
+    {transit && <LiveFeeds source="transit"/>}
     {page === 'analise-historica' && <History key={`${data.period.start}/${data.period.end}`} data={data} map={map} onNavigate={onNavigate} onHistoricalPeriod={onHistoricalPeriod} region={region}/>}
   </div>;
 }
