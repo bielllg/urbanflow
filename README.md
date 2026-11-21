@@ -18,7 +18,7 @@ python -m pip install -r scripts/requirements.txt
 python -X utf8 scripts/ingest.py
 ```
 
-A ingestão é independente do servidor web e preserva o último arquivo válido quando a aquisição falha. Consulte `python scripts/ingest.py --help` para atualizar fontes específicas. A atualização na interface relê os valores disponíveis e consulta novamente os feeds das camadas ativas. Execute o importador para atualizar os snapshots históricos e programados.
+A ingestão é independente do servidor web e preserva o último arquivo válido quando a aquisição falha. O workflow **Atualizar dados oficiais** importa o GTFS nas segundas, quartas e sextas e aceita outras fontes sob demanda. Só envia o snapshot ao GitHub após validar a fonte e executar os testes e o build. O projeto na Vercel precisa estar vinculado ao repositório para que esses commits atualizem o site automaticamente. A atualização na interface relê os snapshots publicados e consulta novamente os feeds das camadas ativas.
 
 ## Publicar em PostgreSQL/PostGIS
 
@@ -41,7 +41,7 @@ O publicador aplica a migração de `db/`, grava os snapshots e indexa geometria
 | Território e população | 490 bairros com população residente do Censo 2022 e 56.354 trechos de logradouros. Dados [BHGeo](https://prefeitura.pbh.gov.br/prodabel/bhgeo) e [População e Domicílio por Bairro](https://dados.pbh.gov.br/dataset/pop-domic-bairro-2022). |
 | Radares | 65 equipamentos com contagem em 141 horas publicadas de agosto de 2021. As lacunas permanecem ausentes. [BHTRANS](https://dados.pbh.gov.br/dataset/contagens-volumetricas-de-radares). |
 | Velocidade amostral | 398 agregações por corredor, sentido, dia e hora de 20/08/2019 a 11/03/2020. Velocidade calculada por distância acumulada ÷ tempo acumulado no conjunto. [Pesquisa SUMOB](https://dados.pbh.gov.br/dataset/velocidade-nos-corredores). |
-| Ônibus programados | 326 linhas, 9.925 paradas e calendários de serviço processados de 09/11/2026 a 30/11/2026. [GTFS SUMOB](https://dados.pbh.gov.br/dataset/gtfs). |
+| Ônibus programados | Linhas, paradas e calendários de serviço do último snapshot disponível. A tela Transporte público exibe a vigência e avisa quando faltam até sete dias. [GTFS SUMOB](https://dados.pbh.gov.br/dataset/gtfs). |
 | Ônibus observados | Última posição válida por veículo do [GPS da PBH](https://dados.pbh.gov.br/dataset/tempo_real_onibus_-_coordenada). O estado ao vivo usa a hora da observação e expira em dois minutos. |
 | Operação convencional | Usuários registrados por dia e por linha no [MCO de setembro de 2026](https://dados.pbh.gov.br/dataset/mapa-de-controle-operacional-mco-consolidado-a-partir-de-abril-de-2022). A fonte explica a exclusão das entradas em bloqueios BHBUS e estações de transferência MOVE. |
 | Endereços | Logradouro e número consultados no [Cadastro Técnico Municipal](https://dados.pbh.gov.br/dataset/endereco-cadastro-tecnico-municipal/resource/eda480b1-1050-46a9-a6b7-53b5800a7aba), com geometria oficial convertida de EPSG:31983 para WGS84. |
@@ -62,4 +62,4 @@ npm test
 npm run build
 ```
 
-Instale o navegador de teste com `npx playwright install chromium`. Com a aplicação em execução, use `node tests/browser.mjs` para verificar navegação, filtros, busca, exportações e responsividade.
+Instale o navegador de teste com `npx playwright install chromium`. Com a aplicação em execução, use `node tests/browser.mjs` para verificar navegação, filtros, busca, exportações e responsividade e `node tests/accessibility.mjs` para a auditoria automatizada de acessibilidade. A CI executa ambos em Chromium.

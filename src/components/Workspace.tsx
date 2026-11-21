@@ -6,7 +6,6 @@ import {useCallback,useEffect,useMemo,useRef,useState,type MouseEvent} from 'rea
 import {ArrowDownToLine,Bell,BusFront,CalendarDays,ChevronLeft,ChevronRight,ChevronDown,CircleHelp,Clock3,Database,Filter,Layers,Map as MapIcon,MapPin,Menu,RefreshCw,Search,TriangleAlert,X} from 'lucide-react';
 import type {Feature,FeatureCollection,Position} from 'geojson';
 import Overview from './Overview';
-import Analytics from './Analytics';
 import {useWorkspaceOverlays} from './useWorkspaceOverlays';
 import {alertDate,Reports,SettingsView,useLocalValue,useWorkspaceAppearance,type SavedReport,type AlertRule,type AlertEvent} from './Utilities';
 import {pages,type PageId} from '@/lib/pages';
@@ -16,6 +15,7 @@ import {dashboardQueryFor} from '@/lib/dashboard-query';
 
 const noFeatures:FeatureCollection={type:'FeatureCollection',features:[]};
 const MobilityMap=dynamic(()=>import('./MobilityMap'),{ssr:false,loading:()=> <div className="map-placeholder" aria-label="Preparando o mapa" role="status"/>});
+const Analytics=dynamic(()=>import('./Analytics'),{loading:()=> <div className="skeleton-layout" role="status" aria-label="Preparando análise"><section/></div>});
 const mapLayers=[
   {id:'traffic',label:'Trânsito',icon:Layers},
   {id:'accident',label:'Sinistros',icon:TriangleAlert},
@@ -45,7 +45,7 @@ function useRequest<T>(url:string|null,version:number,interval=0,scope=url) {
       if(busy || controller.signal.aborted) return;
       busy=true;
       try{
-        const response=await fetch(url!,{signal:controller.signal,cache:'no-store'});
+        const response=await fetch(url!,{signal:controller.signal,cache:version===0&&!interval?'default':'no-store'});
         if(!response.ok) throw new Error('HTTP '+response.status);
         const data=await response.json() as T;
         if(!controller.signal.aborted) setSnapshot({url:url!,scope,version,data,error:false});
@@ -134,7 +134,7 @@ export default function Workspace({page,initialDashboard}:{page:PageId;initialDa
   mapQuery.set('layers',layers.join(','));
   const viewportQuery=new URLSearchParams(mapQuery);
   if(bounds)viewportQuery.set('bbox',bounds);
-  const mapUrl=data && bounds && (isMap||compact||analyticsPage) ? '/api/map?'+viewportQuery.toString():null;
+  const mapUrl=data && bounds && (isMap||analyticsPage) ? '/api/map?'+viewportQuery.toString():null;
   const layerData=useRequest<MapData>(mapUrl,version,layers.includes('transit')&&mode==='current'?22000:0,mapQuery.toString());
   const mapPayload=layerData.data ?? emptyMap;
   const findUrl=popup==='search'&&appliedTerm.length>=2 ? '/api/search?q='+encodeURIComponent(appliedTerm):null;
@@ -308,7 +308,7 @@ export default function Workspace({page,initialDashboard}:{page:PageId;initialDa
       {!data&&!dash.error&&<div className="skeleton-layout" aria-busy="true" aria-label="Carregando dados"><div/><div/><div/><div/><section/></div>}
       {data&&compact&&<div className="status-strip"><Database size={15}/><strong>Dados abertos</strong><span>Prefeitura de Belo Horizonte · {dateLabel}</span></div>}
       {data&&compact&&<>
-        <Overview data={data} onNavigate={navigate} map={mapNode}/>
+        <Overview data={data} onNavigate={navigate}/>
       </>}
       {data&&isMap&&<>
         <div className="map-toolbar"><div className="pills map-layer-pills" role="group" aria-label="Camadas rápidas">
@@ -330,6 +330,7 @@ export default function Workspace({page,initialDashboard}:{page:PageId;initialDa
         <div className="map-grid"><div className="main-map">{mapNode}
           {layerData.error&&<div className="map-message" role="alert">Camada indisponível. <button onClick={refresh}>Tentar novamente</button></div>}
           {layerData.pending&&<div className="map-loading" role="status">Atualizando camadas…</div>}
+          {!!mapPayload.omittedAccidents&&<div className="map-message" role="status">O mapa prioriza os 8.000 sinistros mais recentes. Aproxime o mapa ou reduza o período para ver os demais.</div>}
         </div><aside className="map-details" aria-label="Detalhes do mapa">
           <section className="panel detail-panel">
             <div className="popover-head"><p className="eyebrow">{activeFeature?'Elemento selecionado':'Belo Horizonte, MG'}</p>{activeFeature&&<button className="quiet-icon" onClick={()=>{setFocus(null);setClicked(null);update({selected:null,street:null,route:activeFeature.properties?.kind==='route'?null:route||null});}} aria-label="Limpar seleção"><X size={16}/></button>}</div>

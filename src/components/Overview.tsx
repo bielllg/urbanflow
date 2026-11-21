@@ -1,13 +1,14 @@
 'use client';
 
 import { Activity, ArrowUpRight, BusFront, CalendarDays, ChevronRight, MapPin, TriangleAlert } from 'lucide-react';
-import type { ReactNode } from 'react';
+import Link from 'next/link';
 import type { DashboardData } from '@/lib/types';
-import { Chart, Kpi, Panel, displayDate, number } from './ViewParts';
+import { Kpi, Panel, displayDate, number } from './ViewParts';
+import OverviewChart from './OverviewChart';
 
-type Props = { data: DashboardData; onNavigate: (path: string) => void; map: ReactNode };
+type Props = { data: DashboardData; onNavigate: (path: string) => void };
 
-export default function Overview({ data, onNavigate, map }: Props) {
+export default function Overview({ data, onNavigate }: Props) {
   const { totals } = data;
   const regional = [...data.regions].sort((a, b) => b.accidents - a.accidents).slice(0, 4);
   const latest = [...data.accidents].sort((a, b) => b.date.localeCompare(a.date) || (b.hour ?? -1) - (a.hour ?? -1)).slice(0, 3);
@@ -26,16 +27,21 @@ export default function Overview({ data, onNavigate, map }: Props) {
           ? <Kpi title="Volume registrado" value={totals.volume} unit="veíc." tone="blue" icon={<Activity size={15}/>} caption="Contagens nos radares disponíveis" series={data.trafficHours}/>
           : totals.averageSpeed != null
             ? <Kpi title="Velocidade amostral" value={totals.averageSpeed} unit="km/h" tone="blue" icon={<Activity size={15}/>} caption="Corredores monitorados · PBH" series={data.trafficHours}/>
-            : <Kpi title="Viagens programadas" value={totals.plannedTrips} tone="blue" icon={<CalendarDays size={15}/>} caption={data.plannedPeriod ? 'GTFS/SUMOB · '+displayDate(data.plannedPeriod.start) : 'Calendário GTFS indisponível'}/>}
+            : <Kpi title="Viagens programadas" value={totals.plannedTrips} tone="blue" icon={<CalendarDays size={15}/>} caption={data.plannedPeriod ? (data.transitScheduleStatus==='expired'?'Último calendário · ':'GTFS/SUMOB · ')+displayDate(data.plannedPeriod.start) : 'Calendário GTFS indisponível'}/>}
         <Kpi title="Linhas de ônibus" value={totals.routes || null} icon={<BusFront size={15}/>} caption="Serviço programado · GTFS/SUMOB"/>
         <Kpi title="Paradas cadastradas" value={totals.stops || null} tone="gold" icon={<MapPin size={15}/>} caption="Rede de ônibus · GTFS/SUMOB"/>
       </div>
 
       <div className="uv-overview-columns">
         <div className="uv-stack">
-          <Panel className="uv-map-panel" title="Mapa de mobilidade urbana" subtitle="Vias e ocorrências georreferenciadas de Belo Horizonte"
+          <Panel className="uv-map-panel" title="Mapa de mobilidade urbana" subtitle="Limites de bairros · Prefeitura de Belo Horizonte"
             action={<button className="uv-text-button" onClick={() => onNavigate('/mapa')}>Abrir mapa completo <ArrowUpRight size={12} aria-hidden="true"/></button>}>
-            <div className="uv-map-slot">{map}</div>
+            <div className="uv-map-slot"><Link href="/mapa" prefetch={false} onClick={event=>{
+              if(event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+              event.preventDefault();onNavigate('/mapa');
+            }} className="uv-map-preview">
+              <span>Explorar mapa <span className="sr-only">interativo de Belo Horizonte</span><ArrowUpRight size={14} aria-hidden="true"/></span>
+            </Link></div>
           </Panel>
 
           <Panel title="Regionais monitoradas" subtitle="Sinistros com vítima no período · População do Censo 2022"
@@ -58,7 +64,7 @@ export default function Overview({ data, onNavigate, map }: Props) {
           <Panel title={totals.volume != null ? 'Fluxo por horário' : 'Sinistros por horário'}
             subtitle={totals.volume != null ? 'Volume nos radares com contagem válida' : 'Boletins com hora informada'}
             action={<button className="uv-text-button" onClick={() => onNavigate(totals.volume != null ? '/transito' : '/acidentes')}>Explorar</button>}>
-            <Chart values={totals.volume != null ? data.trafficHours : data.accidentHours} label={totals.volume != null ? 'Veículos' : 'Sinistros'}/>
+            <OverviewChart values={totals.volume != null ? data.trafficHours : data.accidentHours} label={totals.volume != null ? 'Veículos' : 'Sinistros'}/>
           </Panel>
 
           <Panel title="Últimos sinistros do período" action={<button className="uv-text-button" onClick={() => onNavigate('/acidentes')}>Ver todos</button>}>

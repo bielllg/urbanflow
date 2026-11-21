@@ -150,7 +150,7 @@ try{
   assert.deepEqual(failures,[]);
   if(process.env.URBANFLOW_SCREENSHOTS){
     await page.setViewportSize({width:1600,height:1000});
-    await page.locator('.maplibregl-canvas').waitFor();
+    await page.getByRole('link',{name:'Explorar mapa interativo de Belo Horizonte'}).waitFor();
     await page.waitForTimeout(2000);
     await page.screenshot({path:join(process.env.URBANFLOW_SCREENSHOTS,'urbanflow-visao-geral.png'),fullPage:true});
     await page.goto(root+'/mapa');

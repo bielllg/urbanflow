@@ -3,7 +3,8 @@
 import { Activity, BusFront, CalendarDays, ChevronLeft, ChevronRight, Database, Gauge, MapPin, Pause, Play, Search, TriangleAlert } from 'lucide-react';
 import { useEffect, useEffectEvent, useMemo, useState, type ReactNode } from 'react';
 import type { Accident, Count, DashboardData, Period, Traffic, TransitRoute } from '@/lib/types';
-import { Breakdown, Chart, Kpi, Panel, displayDate, displayPeriod, number } from './ViewParts';
+import { Breakdown, Kpi, Panel, displayDate, displayPeriod, number } from './ViewParts';
+import { Chart } from './Chart';
 
 type Page = 'transito' | 'acidentes' | 'transporte-publico' | 'analise-historica';
 type Navigate = (url: string) => void;
@@ -351,6 +352,10 @@ export default function Analytics({ data, page, map, onNavigate, onSelectRoute, 
       <span>{transit ? 'Calendário importado' : 'Cobertura publicada'} · {displayPeriod(coverage)}</span>
       <span className="uv-status">Filtro · {displayPeriod(data.period)}</span>
     </div>
+    {transit&&data.transitValidity&&(data.transitScheduleStatus==='expired'||data.transitScheduleStatus==='expiring')&&
+      <p className="status-strip alert-strip" role="status">{data.transitScheduleStatus==='expired'
+        ? 'O calendário publicado venceu. As viagens exibidas são do período de referência.'
+        : 'O calendário publicado vence em até sete dias.'} Vigência até {displayDate(data.transitValidity.end)}.</p>}
     {isTraffic && <TrafficView data={data} map={map} area={region}/>}
     {page === 'acidentes' && <Accidents data={data} map={map} onNavigate={onNavigate} area={region}/>}
     {transit && <Transit data={data} map={map} selectedRoute={selectedRoute} onSelectRoute={onSelectRoute}/>}

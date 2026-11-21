@@ -18,7 +18,8 @@ export type DashboardData = {
   trafficVolumeMonths:Count[]; trafficSpeedMonths:Count[];
   regions:Region[]; regionOptions?:string[]; accidents:Accident[]; routes:TransitRoute[];
   transitValidity:Period|null; unmappedAccidents:number; comparison?:{period:Period; accidents:number; trafficCount:number};
+  transitScheduleStatus:'current'|'expiring'|'expired'|'unavailable';
   operations:Operations|null;
   plannedPeriod:Period|null;
 };
-export type MapData = {collection:FeatureCollection; observedAt:string|null; fresh:boolean; status:'current'|'stale'|'unavailable'};
+export type MapData = {collection:FeatureCollection; observedAt:string|null; fresh:boolean; status:'current'|'stale'|'unavailable'; omittedAccidents?:number};

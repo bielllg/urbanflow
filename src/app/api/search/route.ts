@@ -2,12 +2,14 @@ import type {FeatureCollection} from 'geojson';
 import {snapshot} from '@/lib/data';
 import type {Transit} from '@/lib/types';
 import {searchAddresses} from '@/lib/addresses';
+import {invalidQuery,queryTooLong} from '@/lib/http';
 
 const empty:FeatureCollection={type:'FeatureCollection',features:[]};
 const normalize=(text:string)=>text.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase();
 type Result={id:string;name:string;kind:string;lat?:number;lng?:number;route?:string};
 
 export async function GET(request:Request) {
+  if(queryTooLong(request)) return invalidQuery();
   const term=normalize(new URL(request.url).searchParams.get('q')?.trim().slice(0,100) ?? '');
   if(term.length<2) return Response.json([]);
   const [bairros,streets,transit,addresses]=await Promise.all([

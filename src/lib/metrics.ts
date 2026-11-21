@@ -3,7 +3,7 @@ import type { Accident, Count, Period, Traffic } from './types';
 export const week = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 export function validDay(value: string | null | undefined): value is string {
-  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  return !!value && /^(?:19|20)\d{2}-\d{2}-\d{2}$/.test(value) &&
     Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
 }
 

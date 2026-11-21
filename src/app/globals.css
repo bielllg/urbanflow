@@ -1,6 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700;750;800&display=swap');
-
-:root{font-family:Inter,system-ui,sans-serif;color-scheme:light}
+:root{font-family:var(--font-inter),system-ui,sans-serif;color-scheme:light}
 *{box-sizing:border-box}
 html,body{margin:0;min-height:100%;background:#f3f6f6}
 button,input,select{font:inherit}
@@ -112,7 +110,7 @@ h1{font-size:26px;letter-spacing:-.85px;line-height:1.13;font-weight:770}.subtit
   animation: var(--entry-map) var(--entry-duration) var(--ease-interface);
 }
 
-.workspace-content .uv-chart :is(.recharts-area-curve, .recharts-area-area, .recharts-area-dots) {
+.workspace-content .uv-chart :is(.recharts-area-curve, .recharts-area-area, .recharts-area-dots, .uv-overview-curve) {
   --entry-duration: 640ms;
   animation: var(--entry-curve) var(--entry-duration) var(--ease-interface) 80ms backwards;
 }
@@ -157,7 +155,7 @@ h1{font-size:26px;letter-spacing:-.85px;line-height:1.13;font-weight:770}.subtit
     --entry-columns: none;
     --entry-track: none;
   }
-  .urban[data-entry-motion="on"] :is(.workspace-title, .workspace-content :is(.uv-kpi, .uv-panel, .detail-panel, .utility-panel, .main-map), .workspace-content .uv-chart :is(.recharts-area-curve, .recharts-area-area, .recharts-area-dots, .recharts-bar-rectangles), .workspace-content .uv-breakdown-track > span) {
+  .urban[data-entry-motion="on"] :is(.workspace-title, .workspace-content :is(.uv-kpi, .uv-panel, .detail-panel, .utility-panel, .main-map), .workspace-content .uv-chart :is(.recharts-area-curve, .recharts-area-area, .recharts-area-dots, .recharts-bar-rectangles, .uv-overview-curve), .workspace-content .uv-breakdown-track > span) {
     animation-duration: var(--entry-duration) !important;
   }
 }

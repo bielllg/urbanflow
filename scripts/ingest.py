@@ -749,6 +749,14 @@ def main():
                         missing = [item for entry in entries for item in entry.get("missingResources", [])]
                         if missing and output.is_file() and target in catalog and not catalog[target].get("missingResources"):
                             raise ValueError("recursos indisponíveis, mantendo a versão completa anterior: " + ", ".join(missing))
+                        if target == "transit":
+                            today = datetime.now(BRT).date().isoformat()
+                            end = snapshot.get("scheduleEnd")
+                            if not end or end < today or not snapshot.get("routes") or not snapshot.get("stops"):
+                                raise ValueError("GTFS sem calendário vigente ou sem rede; mantendo o último snapshot válido")
+                            previous = json.loads(output.read_bytes()) if output.is_file() else {}
+                            if end < (previous.get("scheduleEnd") or ""):
+                                raise ValueError("GTFS reduziria a cobertura publicada; mantendo o último snapshot válido")
                         if target in ("accidents", "traffic", "radar"):
                             assign_neighborhoods(snapshot, include_region=target != "accidents")
                         atomic_json(output, snapshot)

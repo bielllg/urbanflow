@@ -1,5 +1,8 @@
 import type {Metadata} from 'next';
+import localFont from 'next/font/local';
 import './globals.css';
+
+const inter=localFont({src:'./fonts/inter-latin-wght-normal.woff2',weight:'400 800',display:'swap',variable:'--font-inter'});
 
 export const metadata: Metadata = {
   title:'UrbanFlow · Mobilidade de Belo Horizonte',
@@ -7,5 +10,5 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({children}:{children:React.ReactNode}) {
-  return <html lang="pt-BR"><body>{children}</body></html>;
+  return <html lang="pt-BR" className={inter.variable}><body>{children}</body></html>;
 }

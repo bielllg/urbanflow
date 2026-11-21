@@ -1,7 +1,7 @@
 import 'server-only';
 import {readFile, stat} from 'node:fs/promises';
 import {join} from 'node:path';
-import type {Feature, FeatureCollection, LineString, Point} from 'geojson';
+import type {Feature, FeatureCollection, LineString, Point, Position} from 'geojson';
 import {addDays, byAccidentHour, byTraffic, dateCoverage, groupCount, localDay, measuredSpeed, overlaps, previousPeriod, readPeriod, week, weekday, within, withinSortedDates} from './metrics';
 import type {Accident, DashboardData, MapData, Operations, Source, Traffic, Transit} from './types';
 import {databaseSnapshot,databaseStreet} from './postgis';
@@ -9,6 +9,7 @@ import {addressSource,findAddress} from './addresses';
 
 const emptyMap: FeatureCollection = {type:'FeatureCollection',features:[]};
 const snapshots = new Map<string,{mtime:number; value:unknown}>();
+const pendingSnapshots = new Map<string,Promise<unknown>>();
 const sourceDefaults: Source[] = [
   {id:'accidents',name:'Sinistros de trânsito com vítima',url:'https://dados.pbh.gov.br/dataset/ocorrencia-sinistro-transito-com-vitima',status:'unavailable'},
   {id:'transit',name:'GTFS · SUMOB',url:'https://dados.pbh.gov.br/dataset/gtfs',status:'unavailable'},
@@ -24,9 +25,16 @@ export async function snapshot<T>(name:string, fallback:T):Promise<T> {
     const info = await stat(path);
     const existing = snapshots.get(name);
     if (existing?.mtime === info.mtimeMs) return existing.value as T;
-    const value = JSON.parse(await readFile(path,'utf8')) as T;
-    snapshots.set(name,{mtime:info.mtimeMs,value});
-    return value;
+    const key=path+'|'+info.mtimeMs;
+    const pending=pendingSnapshots.get(key);
+    if(pending) return await pending as T;
+    const reading=readFile(path,'utf8').then(content=>{
+      const value=JSON.parse(content) as T;
+      snapshots.set(name,{mtime:info.mtimeMs,value});
+      return value;
+    }).finally(()=>pendingSnapshots.delete(key));
+    pendingSnapshots.set(key,reading);
+    return await reading;
   } catch {
     return (snapshots.get(name)?.value as T | undefined) ?? fallback;
   }
@@ -96,13 +104,16 @@ export async function dashboard(query:URLSearchParams, {compact=false}={}): Prom
   const view=query.get('view');
   const today=localDay();
   const transitValidity = transit.scheduleStart && transit.scheduleEnd ? {start:transit.scheduleStart,end:transit.scheduleEnd} : null;
+  const transitScheduleStatus= !transitValidity||today<transitValidity.start?'unavailable':
+    today>transitValidity.end?'expired':addDays(today,7)>=transitValidity.end?'expiring':'current';
   const transitDay=transitValidity && today>=transitValidity.start && today<=transitValidity.end ? today : transit.scheduleDate ?? today;
   const end = view === 'transito' ? trafficCoverage?.end ?? coverage?.end ?? localDay() : view==='transporte-publico'?transitDay:coverage?.end ?? trafficCoverage?.end ?? localDay();
   const period = readPeriod(query,{start:view==='transporte-publico'?end:addDays(end,-29),end});
   const area = query.get('region')?.trim().toLocaleLowerCase('pt-BR');
   const areaRows = area ? accidentIndex.byRegion.get(area)??[] : accidentIndex.rows;
   const rows = withinSortedDates(areaRows,period);
-  const readings = within(traffic.filter(row=>!area || row.region.toLocaleLowerCase('pt-BR')===area),period);
+  const regionalTraffic=area ? traffic.filter(row=>row.region.toLocaleLowerCase('pt-BR')===area) : traffic;
+  const readings = within(regionalTraffic,period);
   const allVolumes = readings.flatMap(row=>typeof row.volume === 'number' ? [row.volume] : []);
   const mode = allVolumes.length ? 'volume' : 'speed';
   const measuredMonths=[...new Set(readings.map(row=>row.date.slice(0,7)))].sort();
@@ -151,9 +162,9 @@ export async function dashboard(query:URLSearchParams, {compact=false}={}): Prom
       return {name:label,accidents:value??0,population,rate:population ? (value??0)*100000/population:null};
     }).sort((a,b)=>b.accidents-a.accidents),
     accidents:rows.slice().sort((a,b)=>b.date.localeCompare(a.date)||(b.hour??-1)-(a.hour??-1)).slice(0,3),
-    routes:compact&&view!=='transporte-publico'?[]:routes,transitValidity,operations,plannedPeriod:supportedSchedule,
+    routes:compact&&view!=='transporte-publico'?[]:routes,transitValidity,transitScheduleStatus,operations,plannedPeriod:supportedSchedule,
     unmappedAccidents:rows.filter(row=>row.lat===null || row.lng===null).length,
-    comparison: {period:comparisonPeriod,accidents:withinSortedDates(areaRows,comparisonPeriod).length,trafficCount:within(traffic,comparisonPeriod).length},
+    comparison: {period:comparisonPeriod,accidents:withinSortedDates(areaRows,comparisonPeriod).length,trafficCount:within(regionalTraffic,comparisonPeriod).length},
   };
 }
 
@@ -208,8 +219,32 @@ async function liveVehicles():Promise<GpsSnapshot> {
   return gpsRequest;
 }
 
-export async function mapData(query:URLSearchParams):Promise<MapData> {
-  const {accidents,traffic,neighborhoods,transit} = await getData();
+const neighborhoodBounds=new WeakMap<Feature,number[]>();
+function boundsOf(feature:Feature){
+  const existing=neighborhoodBounds.get(feature);
+  if(existing) return existing;
+  const bounds=[Infinity,Infinity,-Infinity,-Infinity];
+  const geometry=feature.geometry;
+  const rings=geometry.type==='Polygon'?geometry.coordinates:geometry.type==='MultiPolygon'?geometry.coordinates.flat():[];
+  for(const ring of rings) for(const [lng,lat] of ring as Position[]){
+    bounds[0]=Math.min(lng,bounds[0]);bounds[1]=Math.min(lat,bounds[1]);
+    bounds[2]=Math.max(lng,bounds[2]);bounds[3]=Math.max(lat,bounds[3]);
+  }
+  neighborhoodBounds.set(feature,bounds);
+  return bounds;
+}
+
+export async function mapData(query:URLSearchParams,{exporting=false}={}):Promise<MapData> {
+  const layers=new Set((query.get('layers') ?? 'neighborhood,accident,stop,traffic,route,street').split(','));
+  const includeAccidents=layers.has('accident')||layers.has('heat');
+  const [accidents,study,radar,neighborhoods,transit]=await Promise.all([
+    includeAccidents||layers.has('traffic')?snapshot<Accident[]>('accidents',[]):[],
+    layers.has('traffic')?snapshot<Traffic[]>('traffic',[]):[],
+    layers.has('traffic')?snapshot<Traffic[]>('radar',[]):[],
+    layers.has('neighborhood')?snapshot('neighborhoods',emptyMap):emptyMap,
+    layers.has('stop')||layers.has('route')||query.has('route')?snapshot<Transit>('transit',{routes:[],stops:[]}):{routes:[],stops:[]} as Transit,
+  ]);
+  const traffic=[...study,...radar];
   const accidentIndex=indexAccidents(accidents);
   const end=accidentIndex.coverage?.end ?? localDay();
   const period=readPeriod(query,{start:addDays(end,-29),end});
@@ -221,14 +256,20 @@ export async function mapData(query:URLSearchParams):Promise<MapData> {
   const visible=(lng:number,lat:number,id:string)=>!validBox||selectedFeature===id||
     (lng>=box![0]&&lat>=box![1]&&lng<=box![2]&&lat<=box![3]);
   const type=query.get('incidentType'), fatal=query.get('fatal');
-  const layers=new Set((query.get('layers') ?? 'neighborhood,accident,stop,traffic,route,street').split(','));
   const features:Feature[]=[];
+  let omittedAccidents=0;
   if(selectedFeature?.startsWith('address-')){
     const address=await findAddress(selectedFeature);
     if(address)features.push(address);
   }
   if (layers.has('neighborhood')) {
-    for (const feature of neighborhoods.features) features.push({...feature,properties:{...feature.properties,kind:'neighborhood'}});
+    for(const feature of neighborhoods.features){
+      if(validBox&&String(feature.properties?.id)!==selectedFeature){
+        const [west,south,east,north]=boundsOf(feature);
+        if(west>box![2]||east<box![0]||north<box![1]||south>box![3]) continue;
+      }
+      features.push({...feature,properties:{...feature.properties,kind:'neighborhood'}});
+    }
   }
   if(layers.has('street')) {
     const selected=query.get('street');
@@ -237,12 +278,18 @@ export async function mapData(query:URLSearchParams):Promise<MapData> {
       if(street)features.push({...street,properties:{...street.properties,kind:'street'}});
     }
   }
-  if(layers.has('accident')||layers.has('heat')){
+  if(includeAccidents){
     const areaRows=area ? accidentIndex.byRegion.get(area)??[] : accidentIndex.rows;
-    for(const a of withinSortedDates(areaRows,period)) {
+    const rows=withinSortedDates(areaRows,period);
+    let shown=0;
+    for(let index=rows.length-1;index>=0;index--){
+      const a=rows[index];
       if(a.lat===null||a.lng===null || (type && a.type!==type) || (fatal==='true' && a.fatal!==true) || (fatal==='false' && a.fatal!==false)) continue;
       const id='accident-'+a.id;
-      if(visible(a.lng,a.lat,id))features.push(point(id,'accident',a.type || 'Sinistro com vítima',a.lng,a.lat,{date:a.date,hour:a.hour,region:a.region,fatal:a.fatal,neighborhood:a.neighborhood}));
+      if(!visible(a.lng,a.lat,id)) continue;
+      if(!exporting&&shown>=8000&&id!==selectedFeature){omittedAccidents++;continue;}
+      features.push(point(id,'accident',a.type || 'Sinistro com vítima',a.lng,a.lat,{date:a.date,hour:a.hour,region:a.region,fatal:a.fatal,neighborhood:a.neighborhood}));
+      shown++;
     }
   }
   if(layers.has('traffic')){
@@ -274,7 +321,7 @@ export async function mapData(query:URLSearchParams):Promise<MapData> {
       if(visible(lng,lat,String(f.id)))features.push(f);
     }
   }
-  return {collection:{type:'FeatureCollection',features},observedAt,fresh,status:fresh?'current':observedAt?'stale':'unavailable'};
+  return {collection:{type:'FeatureCollection',features},observedAt,fresh,status:fresh?'current':observedAt?'stale':'unavailable',...(omittedAccidents?{omittedAccidents}:{})};
 }
 
 export async function exportRows(query:URLSearchParams) {

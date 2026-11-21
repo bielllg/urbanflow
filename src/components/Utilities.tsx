@@ -6,7 +6,7 @@ import type {DashboardData,Source} from '@/lib/types';
 export type SavedReport={id:string;name:string;query:string};
 type EntryMotion='system'|'on'|'off';
 const appearanceEvent='urbanflow:appearance-change';
-const appearanceFallbacks={theme:'light',sidebar:false,entryMotion:'on' as EntryMotion};
+const appearanceFallbacks={theme:'light',sidebar:false,entryMotion:'system' as EntryMotion};
 const sessionAppearance={...appearanceFallbacks};
 const isAppearanceValue={
   theme:(value:unknown)=>value==='dark'||value==='light',
@@ -85,7 +85,7 @@ export function Reports({data,query,saved,setSaved,onOpen,onNotice}:{data:Dashbo
     <section className="panel utility-panel"><div className="section-title"><div className="section-icon"><FileText size={19}/></div><div><h2>Gerar relatório</h2><p>Escolha a base e a área do recorte.</p></div></div>
       <div className="form-grid">
         <label>Base de dados<select value={dataset} onChange={e=>change({dataset:e.target.value,start:'',end:''})}><option value="acidentes">Sinistros de trânsito com vítima</option><option value="transito">Medições de trânsito</option></select></label>
-        <label>Regional<select value={area} onChange={e=>change({region:e.target.value})}><option value="">Belo Horizonte · todas</option>{[...new Set([...data.regions.map(row=>row.name),...(area?[area]:[])])].sort().map(name=><option key={name}>{name}</option>)}</select></label>
+        <label>Regional<select value={area} onChange={e=>change({region:e.target.value})}><option value="">Belo Horizonte · todas</option>{[...new Set([...(data.regionOptions??data.regions.map(row=>row.name)),...(area?[area]:[])])].sort((a,b)=>a.localeCompare(b,'pt-BR')).map(name=><option key={name}>{name}</option>)}</select></label>
       </div>
       <div className="report-summary"><div><small>Registros no recorte</small><strong>{(traffic?data.totals.trafficCount:data.totals.accidents).toLocaleString('pt-BR')}</strong></div><div><small>Período</small><b>{data.period.start.split('-').reverse().join('/')} a {data.period.end.split('-').reverse().join('/')}</b></div></div>
       <div className="utility-actions">
@@ -123,9 +123,9 @@ export function SettingsView({sources,theme,setTheme,entryMotion,setEntryMotion,
       </article>)}</div>
     </section>
     <section className="panel utility-panel"><div className="section-title"><div className="section-icon"><Bell size={18}/></div><div><h2>Alertas de análise</h2><p>Registre quando um recorte atingir o limite de sinistros publicados.</p></div></div>
-      <form className="alert-form" onSubmit={e=>{e.preventDefault();const form=e.currentTarget,fields=new FormData(form),name=String(fields.get('name')).trim(),limit=Number(fields.get('limit'));if(!name||!Number.isInteger(limit)||limit<1)return;setRules([...rules,{id:crypto.randomUUID(),name,limit}]);form.reset();}}>
+      <form className="alert-form" onSubmit={e=>{e.preventDefault();const form=e.currentTarget,fields=new FormData(form),name=String(fields.get('name')).trim(),limit=Number(fields.get('limit'));if(!name||!Number.isInteger(limit)||limit<1||limit>999999||rules.length>=30)return;setRules([...rules,{id:crypto.randomUUID(),name,limit}]);form.reset();}}>
         <label>Nome<input name="name" placeholder="Ex. Limite no período" maxLength={60} required/></label><label>Limite<input name="limit" type="number" min={1} max={999999} required/></label>
-        <button className="button primary" type="submit"><Plus size={15}/> Criar alerta</button>
+        <button className="button primary" type="submit" disabled={rules.length>=30}><Plus size={15}/> Criar alerta</button>
       </form>
       {rules.map(rule=><div className="saved-row" key={rule.id}><b>{rule.name} · {rule.limit.toLocaleString('pt-BR')}</b><button className="quiet-icon" aria-label={'Remover '+rule.name} onClick={()=>setRules(rules.filter(item=>item.id!==rule.id))}><Trash2 size={15}/></button></div>)}
       <h3 className="subhead">Histórico neste dispositivo</h3>
