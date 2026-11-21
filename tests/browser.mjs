@@ -100,7 +100,7 @@ try{
   assert.equal(await page.locator('main').evaluate(element=>element.inert),true);
   await nav.getByRole('link',{name:'Configurações',exact:true}).focus();
   await page.keyboard.press('Tab');
-  assert.equal(await nav.getByRole('link',{name:'UrbanFlow início'}).evaluate(element=>element===document.activeElement),true);
+  assert.equal(await nav.getByRole('link',{name:'Via Viva início'}).evaluate(element=>element===document.activeElement),true);
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>document.activeElement?.getAttribute('aria-label')==='Abrir navegação');
 

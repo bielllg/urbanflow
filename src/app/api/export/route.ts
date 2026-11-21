@@ -74,19 +74,19 @@ export async function GET(request:Request) {
   if(format==='csv'){
     const heading=traffic?['ID','Data','Hora','Regional','Via','Velocidade (km/h)','Volume (veículos)']:['ID','Data','Hora','Regional','Tipo','Fatal','Latitude','Longitude'];
     function* rows(){
-      yield* [['UrbanFlow',label],['Área',area],['Período',period],['Fonte',source],['Cobertura da fonte',coverageText],['Metodologia',methodology],[],heading];
+      yield* [['Via Viva',label],['Área',area],['Período',period],['Fonte',source],['Cobertura da fonte',coverageText],['Metodologia',methodology],[],heading];
       for(const r of records) yield 'road' in r ? [r.id,r.date,r.hour,r.region,r.road,r.speed,r.volume] : [r.id,r.date,r.hour,r.region,r.type,r.fatal,r.lat,r.lng];
     }
     return csvResponse(rows(),'urbanflow-relatorio.csv');
   }
-  const doc=new PDFDocument({size:'A4',margin:48,info:{Title:'UrbanFlow - '+label,Author:'UrbanFlow'}});
+  const doc=new PDFDocument({size:'A4',margin:48,info:{Title:'Via Viva - '+label,Author:'Via Viva'}});
   const finished=new Promise<Buffer>((resolve,reject)=>{
     const chunks:Buffer[]=[];
     doc.on('data',(chunk:Buffer)=>chunks.push(chunk));
     doc.on('end',()=>resolve(Buffer.concat(chunks)));
     doc.on('error',reject);
   });
-  doc.fillColor('#126B79').font('Helvetica-Bold').fontSize(13).text('UrbanFlow');
+  doc.fillColor('#126B79').font('Helvetica-Bold').fontSize(13).text('Via Viva');
   doc.moveDown().fillColor('#18252b').fontSize(23).text(label);
   doc.moveDown(0.5).font('Helvetica').fontSize(10).fillColor('#52646c').text(area+'  |  '+period).text('Fonte: '+source).text('Cobertura da fonte: '+coverageText);
   doc.moveDown().fillColor('#18252b').font('Helvetica-Bold').fontSize(15).text(records.length.toLocaleString('pt-BR')+' registros no recorte');

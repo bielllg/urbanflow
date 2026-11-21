@@ -6,7 +6,7 @@ import '../components/views.css';
 const inter=localFont({src:'./fonts/inter-latin-wght-normal.woff2',weight:'400 800',display:'swap',variable:'--font-inter'});
 
 export const metadata: Metadata = {
-  title:'UrbanFlow · Mobilidade de Belo Horizonte',
+  title:'Via Viva · Mobilidade de Belo Horizonte',
   description:'Mapa, trânsito, segurança viária e transporte público de Belo Horizonte com dados abertos.',
 };
 

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import {useRouter,useSearchParams} from 'next/navigation';
 import {useCallback,useEffect,useMemo,useRef,useState,type MouseEvent} from 'react';
@@ -258,7 +259,7 @@ export default function Workspace({page,initialDashboard}:{page:PageId;initialDa
     <a className="skip" href="#main" tabIndex={mobile?-1:undefined}>Pular para o conteúdo</a>
     {mobile&&<div className="nav-shade" onClick={()=>closeMobile()} aria-hidden="true"/>}
     <aside id="main-navigation" ref={sidebar} role={mobile?'dialog':undefined} aria-modal={mobile||undefined} inert={mobileViewport&&!mobile} className={'sidebar '+(mobile?'mobile-open':'')} aria-label="Navegação principal">
-      <div className="branding"><Link href={navigationHref('/')} onClick={follow} className="brand-mark" aria-label="UrbanFlow início"><span className="brand-ring"/></Link><Link href={navigationHref('/')} onClick={follow} className="wordmark">UrbanFlow</Link></div>
+      <div className="branding"><Link href={navigationHref('/')} onClick={follow} className="brand-mark" aria-label="Via Viva início"><Image src="/icon.png" alt="" width={38} height={38} unoptimized/></Link><Link href={navigationHref('/')} onClick={follow} className="wordmark">Via Viva</Link></div>
       {mobile&&<button className="button icon close-navigation" data-close-navigation aria-label="Fechar navegação" onClick={()=>closeMobile()}><X size={19}/></button>}
       <nav aria-label="Espaço de trabalho"><p className="nav-caption">Espaço de trabalho</p>
         {pages.slice(0,-1).map(({id,label,icon:Icon})=><Link key={id} href={navigationHref('/'+id)} prefetch={false} onMouseEnter={prefetchNavigation} onFocus={prefetchNavigation} onClick={follow} title={label} aria-current={page===id?'page':undefined}><Icon size={18}/><span>{label}</span>{page===id&&<i/>}</Link>)}

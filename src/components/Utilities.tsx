@@ -110,7 +110,7 @@ export function SettingsView({sources,theme,setTheme,entryMotion,setEntryMotion,
       <label className="entry-motion-setting">Animações de entrada
         <select value={entryMotion} onChange={event=>setEntryMotion(event.target.value as EntryMotion)}>
           <option value="system">Seguir sistema</option>
-          <option value="on">Ativadas no UrbanFlow</option>
+          <option value="on">Ativadas no Via Viva</option>
           <option value="off">Desativadas</option>
         </select>
       </label>

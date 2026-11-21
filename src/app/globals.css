@@ -15,7 +15,7 @@ p,h1,h2,h3,dl,dd{margin:0}
 .sidebar{position:fixed;z-index:20;inset:0 auto 0 0;width:var(--nav-size);background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:28px 17px 15px;overflow-y:auto}
 .branding{display:flex;align-items:center;gap:11px;margin:0 0 54px 12px;height:41px}
 .brand-mark{flex:none;width:38px;height:38px;border-radius:11px;background:#0f7782;color:white;display:grid;place-items:center;box-shadow:0 5px 15px #0d697822}
-.brand-ring{width:20px;height:20px;border:1.7px solid white;border-radius:50%;display:grid;place-items:center}.brand-ring:after{content:'';display:block;width:13px;height:13px;border:1.4px solid white;border-radius:50%}
+.brand-mark img{border-radius:inherit}
 .wordmark{font-size:22px;font-weight:800;letter-spacing:-.9px}
 .nav-caption{font-size:10px;line-height:1.5;letter-spacing:1.3px;text-transform:uppercase;font-weight:750;color:var(--faint);margin:0 0 14px 13px;white-space:nowrap}
 .sidebar nav a{width:100%;height:45px;display:flex;align-items:center;gap:13px;padding:0 14px;color:var(--muted);font-size:13px;font-weight:550;border-radius:11px;margin:0 0 5px;white-space:nowrap}
