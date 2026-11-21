@@ -603,6 +603,7 @@ def transit(fetch):
                 by_hour = route["calendar"].setdefault(day, [0] * 24)
                 by_hour[hour % 24] += 1
         for id_, route in routes.items():
+            route["calendar"] = dict(sorted(route["calendar"].items()))
             hours = route["calendar"].get(reference.isoformat(), [0] * 24)
             route["hours"], route["trips"] = hours, sum(hours)
             route["stops"] = sorted(route_stop_ids[id_])
