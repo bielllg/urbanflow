@@ -9,7 +9,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{ou
 p,h1,h2,h3,dl,dd{margin:0}
 .urban{--ground:#f3f6f6;--surface:#fff;--text:#1c292f;--muted:#536970;--faint:#607178;--line:#e0e8ea;--primary:#127781;--accent:#0e7580;--soft:#e4f1f1;--well:#f3f7f6;--green:#126b58;--nav-size:242px;background:var(--ground);color:var(--text);min-height:100vh}
 .urban.dark{color-scheme:dark;--ground:#10191d;--surface:#17252a;--text:#e6f2f3;--muted:#a6bac0;--faint:#8ea4aa;--line:#2b3d44;--primary:#70d2d5;--accent:#207980;--soft:#1d3f45;--well:#1e3035;--green:#71d9b4}
-.urban:not(.dark){--ground:#e8f0f2;--line:#d3e1e5;--well:#edf4f5}
+.urban:not(.dark){--ground:#d1d8da;--line:#d3e1e5;--well:#edf4f5}
 .urban.nav-collapsed{--nav-size:82px}
 .sr-only,.skip:not(:focus){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .skip:focus{position:fixed;z-index:90;top:10px;left:10px;padding:12px;background:var(--surface)}
