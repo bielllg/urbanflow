@@ -44,6 +44,7 @@ jobs:
       - run: npm run build
       - name: Publicar snapshot validado
         run: |
+          if git diff --quiet -- data/"$SOURCE".json public/bh-bairros.svg; then exit 0; fi
           git add -- data/"$SOURCE".json data/sources.json public/bh-bairros.svg
           if git diff --cached --quiet; then exit 0; fi
           git config user.name 'github-actions[bot]'
